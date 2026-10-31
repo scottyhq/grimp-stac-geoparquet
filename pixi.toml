@@ -1,0 +1,39 @@
+[workspace]
+authors = ["Scott Henderson <3924836+scottyhq@users.noreply.github.com>"]
+channels = ["conda-forge"]
+name = "grimp-stac-geoparquet"
+platforms = ["osx-arm64", "linux-64"]
+version = "0.1.0"
+
+[tasks]
+stage = { cmd = "python scripts/stage_cogs.py", description = "Step 1: stage COGs on Kopah" }
+index = { cmd = "python scripts/build_index.py", description = "Step 2: build and upload STAC-Geoparquet index" }
+skypilot-login = { cmd = "pixi run -e sky sky api login --no-browser --endpoint https://cloudbank-skypilot.westus2.cloudapp.azure.com", description = "Sign the local sky CLI in with GitHub (copy the token from the browser, press Enter)." }
+sky-stage = { cmd = "bash scripts/sky_launch.sh", description = "Run steps 1 + 2 as a SkyPilot managed job in AWS us-west-2 (extra args go to sky jobs launch)" }
+
+[dependencies]
+python = ">=3.15.2,<3.16"
+rio-stac = ">=0.12.0,<0.13"
+rustac = ">=0.9.18,<0.10"
+pystac = ">=1.15.2,<2"
+earthaccess = ">=0.19.0,<0.20"
+awscli = "*"
+
+# The sky CLI is only needed on the laptop, in its own environment: skypilot pins
+# click<8.2, which conflicts with rasterio. The VM runs the default environment.
+[feature.sky]
+platforms = ["osx-arm64"]
+
+[feature.sky.activation.env]
+SKYPILOT_GLOBAL_CONFIG = ".sky/cloudbank.yaml"
+SKYPILOT_API_COOKIE_FILE = ".sky/cookies.txt"
+
+[feature.sky.dependencies]
+pyyaml = ">=6.0.3,<7"
+python = ">=3.15.2,<3.16"
+
+[feature.sky.pypi-dependencies]
+skypilot = ">=0.14.2, <0.15"
+
+[environments]
+sky = { features = ["sky"], no-default-feature = true }
