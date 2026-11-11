@@ -18,22 +18,6 @@ The COGs sit next to each index, e.g. https://s3.kopah.uw.edu/gaia/public/grimp/
 
 Item properties include `start_datetime`/`end_datetime` for the period and `grimp:version`. NSIDC-0481 Items also have `grimp:site`, the glacier site name (e.g. `W69.10N` is Jakobshavn Isbræ). Asset `title`, `gsd`, `proj:shape` and `proj:transform` are per asset, since resolution can differ between products.
 
-## Browsing in STAC-map
-
-The **Browse** links in the table open a [fork of STAC-map](https://github.com/scottyhq/stac-map) with a few customizations for GrIMP data:
-
-- **Better time slider:** step through mosaic periods with the arrow keys, and keep the slider while an Item is selected
-- **Dynamic colormaps:** colormap and log scaling for single-band COGs such as velocity and backscatter
-- **Hover values:** read the pixel value under the cursor
-
-We intend to contribute these features to Development Seed's [STAC-map](https://github.com/developmentseed/stac-map) over time. The indexes are standard STAC-Geoparquet and also work in the [currently deployed upstream STAC-map](https://developmentseed.org/stac-map/), just without these extras. Further development should happen in the upstream repository.
-
-- https://developmentseed.org/stac-map/?href=https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0723/v04/nsidc-0723.parquet
-- https://developmentseed.org/stac-map/?href=https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0725/v05/nsidc-0725.parquet
-- https://developmentseed.org/stac-map/?href=https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0481/v04/nsidc-0481.parquet
-
-STAC-map renders the COGs in the browser and shows the first asset of each Item: `gamma0` for NSIDC-0723, the RGB `browse` image for NSIDC-0725, and `vv` for NSIDC-0481. The Greenland-wide mosaics all share one footprint, so pick a period with the time slider, then click the footprint to see its metadata and download links. The NSIDC-0481 sites mostly don't overlap, so they are easier to browse.
-
 ## Searching with rustac
 
 [rustac](https://stac-utils.github.io/rustac-py/latest/) can search a STAC-Geoparquet file over HTTPS without downloading it. Install it with `pip install rustac` (or `pixi shell` in this repo).
@@ -85,6 +69,22 @@ aws s3 sync --no-sign-request --endpoint-url https://s3.kopah.uw.edu \
   s3://gaia/public/grimp/nsidc-0723/v04/ grimp-dec2025 \
   --exclude "*" --include "GL_S1bks_mosaic_??Dec25_*_gamma0_*.tif"
 ```
+
+## Browsing in STAC-map
+
+The **Browse** links in the table open a [fork of STAC-map](https://github.com/scottyhq/stac-map) with a few customizations for GrIMP data:
+
+- **Better time slider:** step through mosaic periods with the arrow keys, and keep the slider while an Item is selected
+- **Dynamic colormaps:** colormap and log scaling for single-band COGs such as velocity and backscatter
+- **Hover values:** read the pixel value under the cursor
+
+We intend to contribute these features to Development Seed's [STAC-map](https://github.com/developmentseed/stac-map) over time. The indexes are standard STAC-Geoparquet and also work in the [currently deployed upstream STAC-map](https://developmentseed.org/stac-map/), just without these extras. Further development should happen in the upstream repository.
+
+- https://developmentseed.org/stac-map/?href=https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0723/v04/nsidc-0723.parquet
+- https://developmentseed.org/stac-map/?href=https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0725/v05/nsidc-0725.parquet
+- https://developmentseed.org/stac-map/?href=https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0481/v04/nsidc-0481.parquet
+
+STAC-map renders the COGs in the browser and shows the first asset of each Item: `gamma0` for NSIDC-0723, the RGB `browse` image for NSIDC-0725, and `vv` for NSIDC-0481. The Greenland-wide mosaics all share one footprint, so pick a period with the time slider, then click the footprint to see its metadata and download links. The NSIDC-0481 sites mostly don't overlap, so they are easier to browse.
 
 ## More
 
