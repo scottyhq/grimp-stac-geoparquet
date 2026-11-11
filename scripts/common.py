@@ -25,7 +25,7 @@ class Dataset:
     # of one mosaic period (or granule). resolution and site are optional.
     # Also used to pick the COGs out of each CMR granule's data links.
     filename_re: re.Pattern
-    # Asset order in periods.parquet; viewers that render "the first COG" show
+    # Asset order in <key>.parquet; viewers that render "the first COG" show
     # products[0] by default. Products not listed are appended alphabetically.
     products: list
     default_start: str

@@ -5,7 +5,7 @@
 **Short answer: no.** stac-map renders COGs in the browser with deck.gl-raster, so the
 browser has to fetch byte ranges itself. NSIDC's download endpoint does not send CORS
 headers, so the browser discards the responses no matter how you authenticate. That is why
-the asset hrefs in `output/*/periods.parquet` point at the public Kopah mirror
+the asset hrefs in `output/<dataset>/<dataset>.parquet` point at the public Kopah mirror
 (`s3.kopah.uw.edu/gaia/public/grimp/...`) and not at NASA.
 
 ### What was tested

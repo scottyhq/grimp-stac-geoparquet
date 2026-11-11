@@ -1,7 +1,8 @@
 """Step 2: build a STAC-Geoparquet index of the COGs staged on Kopah.
 
 2a. Generate a STAC Item per COG with the rio-stac CLI (reading the public HTTPS URL)
-2b. Combine Items into stac-geoparquet with the rustac CLI, then upload it
+2b. Merge the per-product Items of each period into one multi-asset Item and
+    write them to <dataset>.parquet (e.g. nsidc-0723.parquet) with rustac, then upload it
 
 Usage:
     python scripts/build_index.py
@@ -21,8 +22,6 @@ from concurrent.futures import ThreadPoolExecutor
 from common import DATASETS, add_dataset_arg, load_env
 from stage_cogs import existing_keys
 
-INDEX_NAME = "items.parquet"
-PERIODS_INDEX_NAME = "periods.parquet"
 ASSET_LEVEL_PROJ = ["proj:shape", "proj:transform"]  # may differ by resolution
 
 
@@ -93,7 +92,7 @@ def merge_by_period(ds, items):
         groups.setdefault(meta["period_id"], {})[meta["product"]] = item
 
     merged = []
-    # Time order, as for items.parquet (STAC-map draws the last row on top)
+    # Time order (STAC-map draws the last row on top)
     for item_id, by_product in sorted(
         groups.items(), key=lambda kv: (next(iter(kv[1].values()))["properties"]["start_datetime"], kv[0])
     ):
@@ -176,19 +175,8 @@ def main():
     # last row is drawn on top, so clicking a stack of footprints picks the newest.
     items.sort(key=lambda i: (i["properties"]["start_datetime"], i["id"]))
 
-    # One index with everything, plus one per product: products share footprints,
-    # so in STAC-map a click on the combined index can't pick a product
-    indexes = {INDEX_NAME: items}
-    for product in sorted({i["properties"]["grimp:product"] for i in items}):
-        indexes[f"{product}.parquet"] = [
-            i for i in items if i["properties"]["grimp:product"] == product
-        ]
-
     # One Item per period with an asset per product
-    indexes[PERIODS_INDEX_NAME] = merge_by_period(ds, items)
-
-    for name, subset in indexes.items():
-        write_index(ds, name, subset, upload=not args.no_upload)
+    write_index(ds, f"{ds.key}.parquet", merge_by_period(ds, items), upload=not args.no_upload)
 
 
 if __name__ == "__main__":
