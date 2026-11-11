@@ -10,9 +10,9 @@ Each index has one STAC Item per mosaic period (or image pair), with one asset p
 
 | Dataset | Coverage | Products (assets) | Index | Browse |
 |---|---|---|---|---|
-| [NSIDC-0723 v4](https://nsidc.org/data/nsidc-0723/versions/4) Sentinel-1 backscatter mosaics | 2025, 6/12-day periods | `gamma0`, `sigma0` (dB, 50 m), `image` (8-bit, 25 m) | [nsidc-0723.parquet](https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0723/v04/nsidc-0723.parquet) | [STAC-map (GrIMP fork)](https://scottyhq.github.io/stac-map/?href=https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0723/v04/nsidc-0723.parquet) · [upstream](https://developmentseed.org/stac-map/?href=https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0723/v04/nsidc-0723.parquet) |
-| [NSIDC-0725 v5](https://nsidc.org/data/nsidc-0725/versions/5) annual velocity mosaics | Dec 2014 - Nov 2023, yearly | `browse` (RGB), `vv`, `vx`, `vy`, `ex`, `ey`, `dT` (200 m) | [nsidc-0725.parquet](https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0725/v05/nsidc-0725.parquet) | [STAC-map (GrIMP fork)](https://scottyhq.github.io/stac-map/?href=https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0725/v05/nsidc-0725.parquet) · [upstream](https://developmentseed.org/stac-map/?href=https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0725/v05/nsidc-0725.parquet) |
-| [NSIDC-0481 v4](https://nsidc.org/data/nsidc-0481/versions/4) TerraSAR-X/TanDEM-X glacier site velocity | Jan - Sep 2023 so far (301 image pairs at 38 sites) | `vv`, `vx`, `vy`, `ex`, `ey` (100 m) | [nsidc-0481.parquet](https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0481/v04/nsidc-0481.parquet) | [STAC-map (GrIMP fork)](https://scottyhq.github.io/stac-map/?href=https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0481/v04/nsidc-0481.parquet) · [upstream](https://developmentseed.org/stac-map/?href=https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0481/v04/nsidc-0481.parquet) |
+| [NSIDC-0723 v4](https://nsidc.org/data/nsidc-0723/versions/4) Sentinel-1 backscatter mosaics | 2025, 6/12-day periods | `gamma0`, `sigma0` (dB, 50 m), `image` (8-bit, 25 m) | [nsidc-0723.parquet](https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0723/v04/nsidc-0723.parquet) | [STAC-map](https://scottyhq.github.io/stac-map/?href=https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0723/v04/nsidc-0723.parquet) |
+| [NSIDC-0725 v5](https://nsidc.org/data/nsidc-0725/versions/5) annual velocity mosaics | Dec 2014 - Nov 2023, yearly | `browse` (RGB), `vv`, `vx`, `vy`, `ex`, `ey`, `dT` (200 m) | [nsidc-0725.parquet](https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0725/v05/nsidc-0725.parquet) | [STAC-map](https://scottyhq.github.io/stac-map/?href=https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0725/v05/nsidc-0725.parquet) |
+| [NSIDC-0481 v4](https://nsidc.org/data/nsidc-0481/versions/4) TerraSAR-X/TanDEM-X glacier site velocity | Jan - Sep 2023 so far (301 image pairs at 38 sites) | `vv`, `vx`, `vy`, `ex`, `ey` (100 m) | [nsidc-0481.parquet](https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0481/v04/nsidc-0481.parquet) | [STAC-map](https://scottyhq.github.io/stac-map/?href=https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0481/v04/nsidc-0481.parquet) |
 
 The COGs sit next to each index, e.g. https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0723/v04/.
 
@@ -26,7 +26,11 @@ The **Browse** links in the table open a [fork of STAC-map](https://github.com/s
 - **Dynamic colormaps:** colormap and log scaling for single-band COGs such as velocity and backscatter
 - **Hover values:** read the pixel value under the cursor
 
-We intend to contribute these features to Development Seed's [STAC-map](https://github.com/developmentseed/stac-map) over time. The indexes are standard STAC-Geoparquet and also work in the [currently deployed upstream STAC-map](https://developmentseed.org/stac-map/) (the "upstream" links), just without these extras. Further development should happen in the upstream repository.
+We intend to contribute these features to Development Seed's [STAC-map](https://github.com/developmentseed/stac-map) over time. The indexes are standard STAC-Geoparquet and also work in the [currently deployed upstream STAC-map](https://developmentseed.org/stac-map/), just without these extras. Further development should happen in the upstream repository.
+
+- https://developmentseed.org/stac-map/?href=https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0723/v04/nsidc-0723.parquet
+- https://developmentseed.org/stac-map/?href=https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0725/v05/nsidc-0725.parquet
+- https://developmentseed.org/stac-map/?href=https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0481/v04/nsidc-0481.parquet
 
 STAC-map renders the COGs in the browser and shows the first asset of each Item: `gamma0` for NSIDC-0723, the RGB `browse` image for NSIDC-0725, and `vv` for NSIDC-0481. The Greenland-wide mosaics all share one footprint, so pick a period with the time slider, then click the footprint to see its metadata and download links. The NSIDC-0481 sites mostly don't overlap, so they are easier to browse.
 
