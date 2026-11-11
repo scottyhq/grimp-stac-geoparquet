@@ -8,6 +8,7 @@ This is just a proof of concept using the last year of S1 mosaics: https://nsidc
 
 - COGs and the index live at https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0723/v04/
 - STAC-Geoparquet index (all products): https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0723/v04/items.parquet
+- STAC-Geoparquet index, one Item per mosaic period with `gamma0`, `sigma0` and `image` assets: https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0723/v04/periods.parquet
 
 ### STAC-MAP
 
@@ -20,7 +21,7 @@ Development Seed has an excellent STAC Map viewer that can read STAC-Geoparquet 
   [sigma0](https://developmentseed.org/stac-map/?href=https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0723/v04/sigma0.parquet),
   [image](https://developmentseed.org/stac-map/?href=https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0723/v04/image.parquet)
 
-The three products share a footprint, so the per-product indexes are easier to browse in STAC-map. Set the time slider first, then click the footprint. Clicking an Item hides the slider; use "Clear selection" to get it back.
+The three products share a footprint, so the per-product indexes are easier to browse in STAC-map. Alternatively, [periods.parquet](https://developmentseed.org/stac-map/?href=https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0723/v04/periods.parquet) has one footprint per period, with each product as an asset (projection shape/transform are per-asset since `image` is 25m). Set the time slider first, then click the footprint. Clicking an Item hides the slider; use "Clear selection" to get it back.
 
 ### Searching the index with rustac
 

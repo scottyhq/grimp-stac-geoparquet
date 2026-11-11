@@ -1,0 +1,45 @@
+# Steps 1 + 2 on a SkyPilot managed job in AWS us-west-2 (same region as NSIDC's
+# Earthdata Cloud bucket), writing COGs + the STAC-Geoparquet index to UW kopah.
+#
+#   pixi run skypilot-login        # once
+#   pixi run sky-stage             # all of 2025
+#   pixi run sky-stage --env PERIODS=3 --env WORKERS=4
+#
+# scripts/sky_launch.sh sets the secrets from .env and the `kopah` AWS profile.
+# Secrets are redacted in SkyPilot logs and only these three leave the laptop.
+name: grimp-stage-cogs
+
+resources:
+  infra: aws/us-west-2
+  cpus: 4
+  use_spot: true
+
+secrets:
+  EARTHDATA_TOKEN: null
+  AWS_ACCESS_KEY_ID: null
+  AWS_SECRET_ACCESS_KEY: null
+
+envs:
+  START: "2025-01-01"
+  END: "2025-12-31"
+  PERIODS: "0"   # 0 = every mosaic period between START and END
+  WORKERS: "8"
+  # Equivalent of the [profile kopah] settings in ~/.aws/config
+  AWS_ENDPOINT_URL: https://s3.kopah.uw.edu
+  AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+  AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+  # Don't probe for .aux.xml/.msk sidecars (403s on kopah) when rio-stac opens COGs
+  GDAL_DISABLE_READDIR_ON_OPEN: EMPTY_DIR
+
+# Synced to ~/sky_workdir, respecting .gitignore (no .env, .pixi, .sky/cookies.txt or output/)
+workdir: ./
+
+setup: |
+  curl -fsSL https://pixi.sh/install.sh | bash
+  source ~/.bashrc
+  pixi install
+
+# Both steps skip work already done, so a spot recovery just resumes
+run: |
+  time pixi run python scripts/stage_cogs.py --start $START --end $END --periods $PERIODS --workers $WORKERS
+  time pixi run python scripts/build_index.py --workers 16
