@@ -1,4 +1,4 @@
-"""Step 1: stage NSIDC-0723 v4 COGs on Kopah public object storage.
+"""Step 1: stage GRIMP COGs (NSIDC-0723 v4, NSIDC-0725 v5) on Kopah public object storage.
 
 Finds COGs via CMR, then for each file (in parallel): download from NSIDC with
 an Earthdata bearer token -> upload to Kopah with the AWS CLI -> delete the local
@@ -8,6 +8,7 @@ Usage:
     python scripts/stage_cogs.py --periods 3          # last 3 mosaic periods
     python scripts/stage_cogs.py --periods 0          # everything in the date range
     python scripts/stage_cogs.py --dry-run
+    python scripts/stage_cogs.py --dataset nsidc-0725 --periods 0
 """
 
 import argparse
@@ -17,21 +18,15 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import earthaccess
 
-from common import (
-    LOCAL_DIR,
-    S3_PREFIX,
-    SHORT_NAME,
-    VERSION,
-    load_env,
-    parse_filename,
-)
+from common import DATASETS, add_dataset_arg, load_env
 
 COG_CONTENT_TYPE = "image/tiff; application=geotiff; profile=cloud-optimized"
 
 
-def find_cogs(start, end, periods, products):
+def find_cogs(ds, start, end, periods, products):
+    parse_filename = ds.parse_filename
     granules = earthaccess.search_data(
-        short_name=SHORT_NAME, version=VERSION, temporal=(start, end)
+        short_name=ds.short_name, version=ds.version, temporal=(start, end)
     )
     urls = [
         url
@@ -49,17 +44,17 @@ def find_cogs(start, end, periods, products):
     return sorted(urls)
 
 
-def existing_keys():
+def existing_keys(ds):
     result = subprocess.run(
-        ["aws", "s3", "ls", f"{S3_PREFIX}/"], capture_output=True, text=True
+        ["aws", "s3", "ls", f"{ds.s3_prefix}/"], capture_output=True, text=True
     )
     # Non-zero exit just means the prefix doesn't exist yet
     return {line.split()[-1] for line in result.stdout.splitlines() if line.strip()}
 
 
-def stage(url, keep):
+def stage(ds, url, keep):
     name = url.rsplit("/", 1)[-1]
-    local = LOCAL_DIR / name
+    local = ds.local_dir / name
     subprocess.run(
         [
             "curl", "--fail", "--silent", "--show-error", "--location",
@@ -74,7 +69,7 @@ def stage(url, keep):
         [
             "aws", "s3", "cp", "--only-show-errors",
             "--content-type", COG_CONTENT_TYPE,
-            str(local), f"{S3_PREFIX}/{name}",
+            str(local), f"{ds.s3_prefix}/{name}",
         ],
         check=True,
     )
@@ -85,15 +80,16 @@ def stage(url, keep):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    parser.add_argument("--start", default="2025-01-01")
-    parser.add_argument("--end", default="2025-12-31")
+    add_dataset_arg(parser)
+    parser.add_argument("--start", help="Default depends on --dataset")
+    parser.add_argument("--end", help="Default depends on --dataset")
     parser.add_argument(
         "--periods", type=int, default=3,
         help="Only stage the N most recent mosaic periods (0 = all)",
     )
     parser.add_argument(
         "--products", nargs="*", default=None,
-        help="Subset of products, e.g. gamma0 sigma0 image",
+        help="Subset of products, e.g. gamma0 sigma0 image (0723) or vv browse (0725)",
     )
     parser.add_argument(
         "--workers", type=int, default=1,
@@ -103,9 +99,13 @@ def main():
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
+    ds = DATASETS[args.dataset]
+    start = args.start or ds.default_start
+    end = args.end or ds.default_end
+
     load_env()
-    urls = find_cogs(args.start, args.end, args.periods, args.products)
-    done = existing_keys()
+    urls = find_cogs(ds, start, end, args.periods, args.products)
+    done = existing_keys(ds)
     todo = [u for u in urls if u.rsplit("/", 1)[-1] not in done]
     print(f"{len(urls)} COGs selected, {len(urls) - len(todo)} already staged, {len(todo)} to go")
 
@@ -114,10 +114,10 @@ def main():
             print(u)
         return
 
-    LOCAL_DIR.mkdir(parents=True, exist_ok=True)
+    ds.local_dir.mkdir(parents=True, exist_ok=True)
     failures = []
     with ThreadPoolExecutor(max_workers=args.workers) as pool:
-        futures = {pool.submit(stage, u, args.keep): u for u in todo}
+        futures = {pool.submit(stage, ds, u, args.keep): u for u in todo}
         for i, future in enumerate(as_completed(futures), 1):
             url = futures[future]
             try:

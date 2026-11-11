@@ -2,9 +2,21 @@
 
 Goal: Create an interface to easily visualize COGs on the web, and also allow programmatic access.
 
-This is just a proof of concept using the last year of S1 mosaics: https://nsidc.org/data/nsidc-0723/versions/4
+This is just a proof of concept using two datasets (see `DATASETS` in [scripts/common.py](scripts/common.py) to add more):
+
+- the last year of S1 mosaics: https://nsidc.org/data/nsidc-0723/versions/4 (default, `--dataset nsidc-0723`)
+- all annual velocity mosaics, Dec 2014 - Nov 2023: https://nsidc.org/data/nsidc-0725/versions/5 (`--dataset nsidc-0725`)
 
 ## Usage
+
+### NSIDC-0725 v5 (annual velocity)
+
+9 years x 7 COGs (`browse`, `vv`, `vx`, `vy`, `ex`, `ey`, `dT`, all 200 m EPSG:3413), ~13 GB total. Same layout as 0723 below:
+
+- COGs and indexes: https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0725/v05/
+- [items.parquet](https://developmentseed.org/stac-map/?href=https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0725/v05/items.parquet) (all products), one index per product (e.g. [vv.parquet](https://developmentseed.org/stac-map/?href=https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0725/v05/vv.parquet), [browse.parquet](https://developmentseed.org/stac-map/?href=https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0725/v05/browse.parquet)), and [periods.parquet](https://developmentseed.org/stac-map/?href=https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0725/v05/periods.parquet) (one Item per year, `browse` asset first since the RGB renders without a colormap)
+
+### NSIDC-0723 v4 (S1 backscatter)
 
 - COGs and the index live at https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0723/v04/
 - STAC-Geoparquet index (all products): https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0723/v04/items.parquet
@@ -62,7 +74,12 @@ Use `..` for an open-ended range, e.g. `2025-12-01T00:00:00Z/..`.
 pixi run stage --dry-run        # list the COGs that would be staged
 pixi run stage --periods 3      # last 3 mosaic periods (3 products each); --periods 0 for all of 2025
 pixi run index                  # rio-stac Items -> rustac -> items.parquet, uploaded next to the COGs
+
+pixi run stage --dataset nsidc-0725 --periods 0   # all 9 years of velocity mosaics
+pixi run index --dataset nsidc-0725
 ```
+
+Local outputs (Items cache, ndjson, parquet) go to `output/<dataset>/`.
 
 Each COG is downloaded, uploaded and deleted one at a time (`--workers 1`), so local disk use stays around one file (~3 GB); a full year is ~355 GB. On home wifi, parallel transfers don't help.
 
@@ -74,6 +91,7 @@ NSIDC's Earthdata Cloud data lives in us-west-2, so [recipes/stage_cogs.yaml](re
 pixi run skypilot-login               # once
 pixi run sky-stage --env PERIODS=3    # subset
 pixi run sky-stage                    # all of 2025
+pixi run sky-stage --env DATASET=nsidc-0725   # all NSIDC-0725 v5 years
 pixi run -e sky sky jobs logs <job-id>
 ```
 

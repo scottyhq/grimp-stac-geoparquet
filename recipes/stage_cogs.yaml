@@ -2,8 +2,9 @@
 # Earthdata Cloud bucket), writing COGs + the STAC-Geoparquet index to UW kopah.
 #
 #   pixi run skypilot-login        # once
-#   pixi run sky-stage             # all of 2025
+#   pixi run sky-stage             # NSIDC-0723 v4, all of 2025
 #   pixi run sky-stage --env PERIODS=3 --env WORKERS=4
+#   pixi run sky-stage --env DATASET=nsidc-0725   # NSIDC-0725 v5, all years
 #
 # scripts/sky_launch.sh sets the secrets from .env and the `kopah` AWS profile.
 # Secrets are redacted in SkyPilot logs and only these three leave the laptop.
@@ -20,8 +21,9 @@ secrets:
   AWS_SECRET_ACCESS_KEY: null
 
 envs:
-  START: "2025-01-01"
-  END: "2025-12-31"
+  DATASET: nsidc-0723   # or nsidc-0725 (see scripts/common.py)
+  START: ""      # empty = the dataset's default range
+  END: ""
   PERIODS: "0"   # 0 = every mosaic period between START and END
   WORKERS: "8"
   # Equivalent of the [profile kopah] settings in ~/.aws/config
@@ -41,5 +43,5 @@ setup: |
 
 # Both steps skip work already done, so a spot recovery just resumes
 run: |
-  time pixi run python scripts/stage_cogs.py --start $START --end $END --periods $PERIODS --workers $WORKERS
-  time pixi run python scripts/build_index.py --workers 16
+  time pixi run python scripts/stage_cogs.py --dataset $DATASET ${START:+--start $START} ${END:+--end $END} --periods $PERIODS --workers $WORKERS
+  time pixi run python scripts/build_index.py --dataset $DATASET --workers 16
