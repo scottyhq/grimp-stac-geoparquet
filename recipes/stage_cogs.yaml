@@ -5,6 +5,7 @@
 #   pixi run sky-stage             # NSIDC-0723 v4, all of 2025
 #   pixi run sky-stage --env PERIODS=3 --env WORKERS=4
 #   pixi run sky-stage --env DATASET=nsidc-0725   # NSIDC-0725 v5, all years
+#   pixi run sky-stage --env DATASET=nsidc-0481 --env WORKERS=32   # NSIDC-0481 v4, 24k small COGs
 #
 # scripts/sky_launch.sh sets the secrets from .env and the `kopah` AWS profile.
 # Secrets are redacted in SkyPilot logs and only these three leave the laptop.
@@ -21,7 +22,7 @@ secrets:
   AWS_SECRET_ACCESS_KEY: null
 
 envs:
-  DATASET: nsidc-0723   # or nsidc-0725 (see scripts/common.py)
+  DATASET: nsidc-0723   # or nsidc-0725, nsidc-0481 (see scripts/common.py)
   START: ""      # empty = the dataset's default range
   END: ""
   PERIODS: "0"   # 0 = every mosaic period between START and END

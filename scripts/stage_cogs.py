@@ -1,4 +1,4 @@
-"""Step 1: stage GRIMP COGs (NSIDC-0723 v4, NSIDC-0725 v5) on Kopah public object storage.
+"""Step 1: stage GRIMP COGs (NSIDC-0723 v4, NSIDC-0725 v5, NSIDC-0481 v4) on Kopah public object storage.
 
 Finds COGs via CMR, then for each file (in parallel): download from NSIDC with
 an Earthdata bearer token -> upload to Kopah with the AWS CLI -> delete the local
@@ -9,6 +9,7 @@ Usage:
     python scripts/stage_cogs.py --periods 0          # everything in the date range
     python scripts/stage_cogs.py --dry-run
     python scripts/stage_cogs.py --dataset nsidc-0725 --periods 0
+    python scripts/stage_cogs.py --dataset nsidc-0481 --periods 0 --workers 16
 """
 
 import argparse
@@ -32,7 +33,7 @@ def find_cogs(ds, start, end, periods, products):
         url
         for g in granules
         for url in g.data_links()
-        if url.endswith(".tif") and "_mosaic_" in url
+        if url.startswith("https://") and ds.filename_re.search(url)
     ]
     if products:
         urls = [u for u in urls if parse_filename(u)["product"] in products]
@@ -89,7 +90,7 @@ def main():
     )
     parser.add_argument(
         "--products", nargs="*", default=None,
-        help="Subset of products, e.g. gamma0 sigma0 image (0723) or vv browse (0725)",
+        help="Subset of products, e.g. gamma0 sigma0 image (0723), vv browse (0725) or vv (0481)",
     )
     parser.add_argument(
         "--workers", type=int, default=1,

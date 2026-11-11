@@ -2,12 +2,28 @@
 
 Goal: Create an interface to easily visualize COGs on the web, and also allow programmatic access.
 
-This is just a proof of concept using two datasets (see `DATASETS` in [scripts/common.py](scripts/common.py) to add more):
+This is just a proof of concept using three datasets (see `DATASETS` in [scripts/common.py](scripts/common.py) to add more):
 
 - the last year of S1 mosaics: https://nsidc.org/data/nsidc-0723/versions/4 (default, `--dataset nsidc-0723`)
 - all annual velocity mosaics, Dec 2014 - Nov 2023: https://nsidc.org/data/nsidc-0725/versions/5 (`--dataset nsidc-0725`)
+- all TerraSAR-X/TanDEM-X glacier-site velocity maps, 2008 - 2023: https://nsidc.org/data/nsidc-0481/versions/4 (`--dataset nsidc-0481`)
 
 ## Usage
+
+### NSIDC-0481 v4 (selected glacier site velocity)
+
+Unlike the Greenland-wide mosaics, these are small maps of ~55 outlet-glacier sites (e.g. `W69.10N` is Jakobshavn Isbræ), one per TSX/TDX image pair: 4,896 pairs x 5 COGs (`vv`, `vx`, `vy`, `ex`, `ey`, all 100 m EPSG:3413, ~0.6 MB each), ~24,500 files, ~15 GB total. Many sites share the same date range, so footprints mostly don't overlap and the indexes are easy to browse in STAC-map.
+
+Only 2023 (Jan - Sep, the last year of data) is staged so far: 1,505 COGs, 301 image pairs at 38 sites, ~1 GB. It staged in ~6 minutes from home wifi with `--workers 8`, since per-file overhead dominates for small files:
+
+```bash
+pixi run stage --dataset nsidc-0481 --start 2023-01-01 --periods 0 --workers 8
+pixi run index --dataset nsidc-0481 --workers 16
+```
+
+- COGs and indexes: https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0481/v04/
+- [items.parquet](https://developmentseed.org/stac-map/?href=https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0481/v04/items.parquet) (all products), one index per product (e.g. [vv.parquet](https://developmentseed.org/stac-map/?href=https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0481/v04/vv.parquet)), and [periods.parquet](https://developmentseed.org/stac-map/?href=https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0481/v04/periods.parquet) (one Item per site and image pair, `vv` asset first)
+- Items carry a `grimp:site` property, so you can filter on a glacier, e.g. `filter="\"grimp:site\" = 'W69.10N'"` with rustac
 
 ### NSIDC-0725 v5 (annual velocity)
 
@@ -68,6 +84,32 @@ for item in items:
 
 Use `..` for an open-ended range, e.g. `2025-12-01T00:00:00Z/..`.
 
+### Downloading
+
+The rustac CLI has no download command, but `rustac search` can write ndjson to stdout, so you can pipe the asset hrefs through `jq` into `curl`. Everything is public over HTTPS, no credentials needed. For example, all `gamma0` mosaics overlapping December 2025 (5 files, ~11 GB):
+
+```bash
+rustac search https://s3.kopah.uw.edu/gaia/public/grimp/nsidc-0723/v04/gamma0.parquet \
+  --datetime 2025-12-01T00:00:00Z/2025-12-31T23:59:59Z -o ndjson \
+  | jq -r '.assets[].href' \
+  | xargs -n 1 -P 4 curl -sS --fail -C - -O --output-dir grimp-dec2025
+```
+
+Use `items.parquet` (all products) or add `--filter` to narrow the search, e.g. `--filter "\"grimp:product\" IN ('gamma0', 'sigma0')"`. `-P 4` runs four downloads at once, and `-C -` resumes partial files if you re-run. Drop the `xargs` line to just list the URLs first.
+
+Alternatively, the bucket allows anonymous S3 access, so `aws s3 sync` works for a whole collection, or a subset with filename globs (the filenames start with the period's start date, so this differs slightly from the date-overlap search above, e.g. it skips `28Nov25_03Dec25`):
+
+```bash
+# whole collection
+aws s3 sync --no-sign-request --endpoint-url https://s3.kopah.uw.edu \
+  s3://gaia/public/grimp/nsidc-0725/v05/ nsidc-0725
+
+# gamma0 periods starting in December 2025 (add --dryrun to preview)
+aws s3 sync --no-sign-request --endpoint-url https://s3.kopah.uw.edu \
+  s3://gaia/public/grimp/nsidc-0723/v04/ grimp-dec2025 \
+  --exclude "*" --include "GL_S1bks_mosaic_??Dec25_*_gamma0_*.tif"
+```
+
 ### Locally
 
 ```bash
@@ -77,6 +119,9 @@ pixi run index                  # rio-stac Items -> rustac -> items.parquet, upl
 
 pixi run stage --dataset nsidc-0725 --periods 0   # all 9 years of velocity mosaics
 pixi run index --dataset nsidc-0725
+
+pixi run stage --dataset nsidc-0481 --periods 1   # one date range (a handful of sites)
+pixi run index --dataset nsidc-0481
 ```
 
 Local outputs (Items cache, ndjson, parquet) go to `output/<dataset>/`.
@@ -92,6 +137,7 @@ pixi run skypilot-login               # once
 pixi run sky-stage --env PERIODS=3    # subset
 pixi run sky-stage                    # all of 2025
 pixi run sky-stage --env DATASET=nsidc-0725   # all NSIDC-0725 v5 years
+pixi run sky-stage --env DATASET=nsidc-0481 --env WORKERS=32   # all NSIDC-0481 v4 (24k small files)
 pixi run -e sky sky jobs logs <job-id>
 ```
 

@@ -22,7 +22,8 @@ class Dataset:
     version: str  # CMR version, e.g. "4"
     # Must define start, end, product and version groups, and a `tag` group
     # spanning the product (+ resolution) part that differs between the files
-    # of one mosaic period. resolution is optional.
+    # of one mosaic period (or granule). resolution and site are optional.
+    # Also used to pick the COGs out of each CMR granule's data links.
     filename_re: re.Pattern
     # Asset order in periods.parquet; viewers that render "the first COG" show
     # products[0] by default. Products not listed are appended alphabetically.
@@ -78,8 +79,10 @@ class Dataset:
             "end_datetime": end.strftime("%Y-%m-%dT%H:%M:%SZ"),
             "product": m["product"],
             "resolution": m.groupdict().get("resolution"),
+            "site": m.groupdict().get("site"),
             "version": m["version"],
             # Item id for the merged per-period Item, i.e. the name minus the tag
+            # (for per-site datasets, one Item per site and period)
             "period_id": (basename[: m.start("tag")] + basename[m.end("tag") :]).removesuffix(".tif"),
         }
 
@@ -129,6 +132,29 @@ DATASETS = {
                 "image, all 200 m Cloud-Optimized GeoTIFFs in EPSG:3413."
             ),
             keywords=["GrIMP", "MEaSUREs", "Greenland", "ice velocity", "SAR", "Landsat"],
+        ),
+        Dataset(
+            short_name="NSIDC-0481",
+            version="4",
+            # e.g. TSX_W76.25N_09Sep23_20Sep23_20-44-38_vv_v04.0.tif
+            # site is a glacier-site name (W76.25N, E66.50N, S46.91W, ...); the
+            # HH-MM-SS acquisition time distinguishes pairs of the same site and dates
+            filename_re=re.compile(
+                r"TSX_(?P<site>[NSEW]\d+\.\d+[NSEW])_(?P<start>\d{2}\w{3}\d{2})_(?P<end>\d{2}\w{3}\d{2})"
+                r"_\d{2}-\d{2}-\d{2}(?P<tag>_(?P<product>[A-Za-z]+))_v(?P<version>[\d.]+)\.tif$"
+            ),
+            products=["vv", "vx", "vy", "ex", "ey"],
+            default_start="2008-01-01",
+            default_end="2025-12-31",
+            title="GrIMP Greenland Selected Glacier Site Velocity Maps from InSAR (NSIDC-0481 v4)",
+            description=(
+                "Ice velocity maps of major Greenland outlet glaciers from the MEaSUREs "
+                "Greenland Ice Mapping Project (GrIMP), derived from TerraSAR-X/TanDEM-X "
+                "image pairs (2008-2023, ~55 glacier sites). Each image pair has velocity "
+                "magnitude (vv), components (vx, vy) and errors (ex, ey), all 100 m "
+                "Cloud-Optimized GeoTIFFs in EPSG:3413."
+            ),
+            keywords=["GrIMP", "MEaSUREs", "Greenland", "ice velocity", "InSAR", "TerraSAR-X", "TanDEM-X"],
         ),
     ]
 }

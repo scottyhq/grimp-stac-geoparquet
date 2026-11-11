@@ -7,6 +7,7 @@ Usage:
     python scripts/build_index.py
     python scripts/build_index.py --no-upload
     python scripts/build_index.py --dataset nsidc-0725
+    python scripts/build_index.py --dataset nsidc-0481 --workers 16
 """
 
 import argparse
@@ -36,6 +37,7 @@ def make_item(ds, name, overwrite):
         "end_datetime": meta["end_datetime"],
         "grimp:product": meta["product"],
         "grimp:resolution": meta["resolution"],
+        "grimp:site": meta["site"],
         "grimp:version": meta["version"],
     }
     subprocess.run(
@@ -80,19 +82,25 @@ def merge_by_period(ds, items):
     """Combine the per-product Items of each mosaic period into one multi-asset Item.
 
     All products in a period share a footprint, so one Item per period with
-    an asset per product lets a viewer toggle products in place.
+    an asset per product lets a viewer toggle products in place. Files are
+    grouped by their name minus the product tag, so per-site datasets
+    (NSIDC-0481) get one Item per site and image pair, not per date range.
     """
     groups = {}
     for item in items:
-        p = item["properties"]
-        groups.setdefault((p["start_datetime"], p["end_datetime"]), {})[p["grimp:product"]] = item
+        # GL_S1bks_mosaic_02Jan25_13Jan25_gamma0_50m_v04.0 -> GL_S1bks_mosaic_02Jan25_13Jan25_v04.0
+        meta = ds.parse_filename(f"{item['id']}.tif")
+        groups.setdefault(meta["period_id"], {})[meta["product"]] = item
 
     merged = []
-    for (start, end), by_product in sorted(groups.items()):
+    # Time order, as for items.parquet (STAC-map draws the last row on top)
+    for item_id, by_product in sorted(
+        groups.items(), key=lambda kv: (next(iter(kv[1].values()))["properties"]["start_datetime"], kv[0])
+    ):
         order = [k for k in ds.products if k in by_product] + sorted(set(by_product) - set(ds.products))
         first = by_product[order[0]]
         if len({json.dumps(i["geometry"]) for i in by_product.values()}) > 1:
-            raise ValueError(f"Products for {start} have different footprints")
+            raise ValueError(f"Products for {item_id} have different footprints")
 
         props = {
             k: v
@@ -111,8 +119,6 @@ def merge_by_period(ds, items):
                 asset[k] = src["properties"][k]
             assets[product] = asset
 
-        # GL_S1bks_mosaic_02Jan25_13Jan25_gamma0_50m_v04.0 -> GL_S1bks_mosaic_02Jan25_13Jan25_v04.0
-        item_id = ds.parse_filename(f"{first['id']}.tif")["period_id"]
         merged.append({**first, "id": item_id, "properties": props, "assets": assets})
     return merged
 
