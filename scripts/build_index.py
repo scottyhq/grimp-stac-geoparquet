@@ -116,6 +116,8 @@ def merge_by_period(ds, items):
             asset["gsd"] = float(gsd)
             for k in ASSET_LEVEL_PROJ:
                 asset[k] = src["properties"][k]
+            if unit := ds.units.get(product):
+                asset["raster:bands"] = [{**b, "unit": unit} for b in asset["raster:bands"]]
             assets[product] = asset
 
         merged.append({**first, "id": item_id, "properties": props, "assets": assets})

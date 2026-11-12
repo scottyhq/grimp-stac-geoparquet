@@ -33,6 +33,8 @@ class Dataset:
     title: str
     description: str
     keywords: list = field(default_factory=list)
+    # raster:bands unit per product (UDUNITS-2 style); products not listed get none
+    units: dict = field(default_factory=dict)
 
     @property
     def key(self):  # nsidc-0723
@@ -87,6 +89,8 @@ class Dataset:
         }
 
 
+VELOCITY_UNITS = {p: "m/yr" for p in ["vv", "vx", "vy", "ex", "ey"]}
+
 DATASETS = {
     d.key: d
     for d in [
@@ -110,6 +114,7 @@ DATASETS = {
                 "EPSG:3413."
             ),
             keywords=["GrIMP", "MEaSUREs", "Greenland", "Sentinel-1", "SAR", "backscatter"],
+            units={"gamma0": "dB", "sigma0": "dB"},
         ),
         Dataset(
             short_name="NSIDC-0725",
@@ -132,6 +137,7 @@ DATASETS = {
                 "image, all 200 m Cloud-Optimized GeoTIFFs in EPSG:3413."
             ),
             keywords=["GrIMP", "MEaSUREs", "Greenland", "ice velocity", "SAR", "Landsat"],
+            units={**VELOCITY_UNITS, "dT": "days"},
         ),
         Dataset(
             short_name="NSIDC-0481",
@@ -155,6 +161,7 @@ DATASETS = {
                 "Cloud-Optimized GeoTIFFs in EPSG:3413."
             ),
             keywords=["GrIMP", "MEaSUREs", "Greenland", "ice velocity", "InSAR", "TerraSAR-X", "TanDEM-X"],
+            units=VELOCITY_UNITS,
         ),
     ]
 }
